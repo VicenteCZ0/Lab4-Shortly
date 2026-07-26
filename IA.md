@@ -2,86 +2,94 @@
 
 Herramienta utilizada: **Claude**
 
-A continuación se listan los prompts utilizados durante el desarrollo del Taller 1, junto con una breve descripción de para qué sirvió cada uno y qué se generó a partir de él.
+A continuación se listan los prompts utilizados durante el desarrollo del Laboratorio 4, junto con una breve descripción de para qué sirvió cada uno y qué se generó a partir de él.
 
 ---
 
 **Prompt:**
-> "a que se refiere con ocultar timestamp del ULID?"
+> tengo que hacer este taller, explicame en que consiste, que se esta haciendo, como se hace, lo que se debe hacer etc, para lograr comprender el contenido
 
-**Uso:** Se pidió primero una explicación del problema (por qué el ULID expuesto filtra la hora de creación) y el paso a paso de la solución, sin aplicar cambios todavía.
+**Uso:** Se pidió una explicación general del laboratorio antes de empezar, para entender qué es el modelo C4, sus 4 niveles, y qué se esperaba en cada uno según la rúbrica.
 
-**Resultado:** Se modificó `Application/Services/LinkService.cs` para generar el `shortUrl` a partir de un hash SHA-256 del ULID codificado en Base62.
-
----
-
-**Prompt:**
-> "donde tengo que agregar cache-control, etag y last modified?"
-
-**Resultado:** Se explicó y se agregó el campo `CreatedAt` a la entidad `Link`, y en `Endpoints/UrlRedirectEndpoint.cs` se implementó el cálculo de `ETag` y `Last-Modified`.
+**Resultado:** No se generó código; fue una explicación conceptual del enunciado.
 
 ---
 
 **Prompt:**
-> "como configuro globalmente Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, Referrer-Policy y Permissions-Policy"
+> que diferencia hay entre un system context diagram y uno de contenedores, se supone que van en el mismo archivo o separados?
 
-**Resultado:** explicó y se creó `Middleware/SecurityHeadersMiddleware.cs` con `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`, registrado en `Program.cs`.
+**Uso:** Se preguntó por la diferencia conceptual entre los niveles del modelo C4 antes de empezar a dibujar.
 
----
-
-**Prompt:** 
-> "explica como se crea un midelware y que es xrespondetime"
-
-**Resultado:** Se creó `Middleware/PerformanceMiddleware.cs`, que agrega el header `X-Response-Time` y registra un log de advertencia dedicado para requests que superan los 500ms.
-
----
-
-**Prompt:** 
->"como se protege los inicios de sesion a nivel de framework?"
-
-**Resultado:** se dió una breve explicación y luego se eliminó el throttling manual con `ConcurrentDictionary` en `UserService.Login` y se reemplazó por el rate limiter nativo de ASP.NET Core, con una policy `"login"` particionada por IP, aplicada en `Pages/Login.cshtml.cs` vía `[EnableRateLimiting("login")]`, devolviendo `429` con `Retry-After`.
+**Resultado:** Se explicó el criterio de "zoom" entre niveles y se sugirió mantener un archivo `.puml` por nivel.
 
 ---
 
 **Prompt:**
-> "como habilito compresión brotli y gzip en asp.net core y donde la ubico en el pipeline?"
+> por que se dice que cada microservicio deberia tener su propia base de datos, que problema evita eso exactamente?
 
-**Uso:** Se pidió una explicación de cómo activar la compresión de respuestas y en qué orden del middleware debía ir respecto a lo ya configurado.
+**Uso:** Se preguntó por el principio de propiedad exclusiva de datos, para entender por qué era un criterio evaluado en la rúbrica y no solo una preferencia de estilo.
 
-**Resultado:** Se agregó `AddResponseCompression()` con `BrotliCompressionProvider` y `GzipCompressionProvider` en `Program.cs`, con `EnableForHttps` desactivado (riesgo BREACH en contenido dinámico con secretos), y `app.UseResponseCompression()` ubicado en el pipeline.
-
----
-
-**Prompt:**
-> "como configuro una política de cors restrictiva en vez de allowanyorigin?"
-
-**Uso:** Se pidió una explicación de cómo definir una política CORS explícita (orígenes/métodos/headers) y dónde aplicarla.
-
-**Resultado:** Se agregó `AddCors()` con la política `"ApiCors"` en `Program.cs`, `app.UseCors()` en el pipeline, y `.RequireCors("ApiCors")` aplicado al endpoint `GET /{shortUrl}` en `UrlRedirectEndpoint.cs`.
+**Resultado:** Se explicó el problema de acoplamiento de esquema entre servicios y por qué el acceso cruzado a otra base de datos rompe la independencia que se busca al separar en microservicios.
 
 ---
 
 **Prompt:**
-> "como devuelvo errores en formato application/problem+json en vez de texto plano?"
+> que diferencia hay entre comunicacion sincrona y asincrona entre microservicios, cuando conviene usar cada una?
 
-**Uso:** Se pidió una explicación de RFC 9457/problem+json y cómo reemplazar las respuestas de error existentes.
+**Uso:** Se preguntó por los patrones de comunicación antes de decidir cómo iban a interactuar Link Service y User Service en el diagrama de contenedores.
 
-**Resultado:** Se agregó validación de formato del `shortUrl` (400 vía `Results.Problem()`) y se modificó el `catch (KeyNotFoundException)` para devolver 404 en el mismo formato, en `UrlRedirectEndpoint.cs`. Se detectó y corrigió un bug durante las pruebas: la validación inicial asumía longitud fija de 12 caracteres, rompiendo los shortUrls sembrados (`aspnet`, `github`, `efcore`); se corrigió para validar solo charset base62 y el `MaxLength` real (32).
-
----
-
-**Prompt:**
-> "que flags de seguridad le tengo que poner a las cookies de la app?"
-
-**Uso:** Se pidió una explicación de HttpOnly, SameSite, Secure y Path, y una auditoría de dónde se escribían cookies en el proyecto.
-
-**Resultado:** Se identificaron dos cookies (autenticación y antiforgery) y se configuraron explícitamente en `Program.cs` con `HttpOnly=true`, `SameSite=Strict`, `Path="/"` y `SecurePolicy` condicionado al entorno.
+**Resultado:** Se explicaron los trade-offs de cada enfoque (latencia, acoplamiento temporal, complejidad de infraestructura) para justificar la elección de comunicación síncrona vía HTTP/REST en el documento de arquitectura.
 
 ---
 
 **Prompt:**
-> "cuando corresponde usar 301 vs 302 vs 307 en una redirección?"
+> que es un api gateway y por que no puedo simplemente dejar que cada servicio reciba las peticiones directo?
 
-**Uso:** Se pidió una explicación de la semántica de cada código y cómo aplicarla según el estado del link (clicks, antigüedad).
+**Uso:** Se preguntó por el rol del API Gateway antes de incluirlo en el diagrama de Nivel 2.
 
-**Resultado:** Se modificó `UrlRedirectEndpoint.cs` para devolver `301` (links con >100 clicks, con `Cache-Control: public, max-age=300, must-revalidate`), `307` (links nuevos, 0 clicks y <24h) y `302` como fallback, preservando la validación y el manejo 404 del ítem #8.
+**Resultado:** Se explicó su función como punto de entrada único (enrutamiento, y potencialmente autenticación/rate limiting centralizado) y se justificó su inclusión en el diagrama de Contenedores.
+
+---
+
+**Prompt:**
+> considerando esa gran arquitectura siento que es demasiado para lo que yo podria, se podria hacer mas simple?
+
+**Uso:** Se pidió una versión simplificada del diagrama de Contenedores, sin Redis, colas de mensajes ni servicios adicionales, acorde al alcance de un proyecto individual de curso.
+
+**Resultado:** Versión simplificada con 2 servicios de dominio en vez de 4-5.
+
+---
+
+**Prompt:**
+> el nombre del contenedor en el diagrama tiene que coincidir exacto con el namespace de c# o puede ser mas descriptivo?
+
+**Uso:** Se preguntó por convención de nomenclatura al pasar de nombres de clases reales a nombres de componentes en el diagrama.
+
+**Resultado:** Se explicó que el nombre del componente puede ser descriptivo, y que el nombre técnico real se deja en la descripción del componente.
+
+---
+
+**Prompt:**
+> en el punto de data ownership tengo que explicar como se resuelve el userid si esta en otra base de datos o eso no importa a este nivel?
+
+**Uso:** Se preguntó si el problema de la foreign key cruzada entre `Link` y `User` debía abordarse explícitamente en el documento de arquitectura.
+
+**Resultado:** Se agregó un párrafo específico en la sección de "Propiedad de los datos" explicando el manejo del `UserId` como referencia sin join directo entre bases de datos.
+
+---
+
+**Prompt:**
+> structurizr dsl y plantuml con extension c4 hacen lo mismo o hay diferencias importantes entre usar uno u otro?
+
+**Uso:** Se preguntó por las opciones de herramientas mencionadas en el enunciado antes de decidir con cuál trabajar.
+
+**Resultado:** Se explicaron las diferencias (Structurizr como DSL propio orientado a C4, PlantUML como lenguaje general con una librería de extensión C4) y se optó por PlantUML por ser más simple de integrar y visualizar sin herramientas adicionales.
+
+---
+
+**Prompt:**
+> me puedes ayudar a revisar la redaccion y ortografia del documento de arquitectura y completar las ideas que me quedaron cortas en cada punto?
+
+**Uso:** Se pidió apoyo para mejorar la redacción y ortografía de `architecture.md`, y ayudar a completar/desarrollar mejor las ideas de cada sección (rationale, comunicación, data ownership, escalabilidad, failure modes, stack tecnológico).
+
+**Resultado:** Versión revisada de `architecture.md` con correcciones de redacción y ortografía, y las ideas de cada punto desarrolladas con mayor detalle.
