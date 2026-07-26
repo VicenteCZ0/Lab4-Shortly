@@ -1,0 +1,22 @@
+@startuml c4-context
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Diagrama de Contexto del Sistema Shortly
+
+Person(endUser, "Usuario Final", "Crea links cortos y los sigue hasta la URL original.")
+Person(admin, "Administrador", "Gestiona usuarios y revisa la actividad de links/clicks.")
+
+System(shortly, "Shortly", "Permite a los usuarios acortar URLs largas, gestionar sus links, y redirige a los visitantes desde una URL corta hacia el destino original.")
+
+System_Ext(browser, "Navegador Web", "Renderiza las paginas de login/registro/dashboard y sigue las redirecciones de links cortos.")
+System_Ext(analyticsConsumer, "Herramienta de Analitica / BI", "Futuro consumidor de estadisticas de clicks exportadas por Shortly.")
+
+Rel(endUser, browser, "Usa")
+Rel(admin, browser, "Usa")
+Rel(browser, shortly, "Inicia sesion, crea/gestiona links, y sigue URLs cortas", "HTTPS")
+Rel(shortly, analyticsConsumer, "Expone estadisticas de clicks (futuro)", "HTTPS/REST")
+
+SHOW_LEGEND()
+
+@enduml
