@@ -1,0 +1,37 @@
+@startuml c4-container-v2
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Diagrama de Contenedores de Shortly
+
+Person(endUser, "Usuario Final", "Crea links cortos y los sigue.")
+Person(admin, "Administrador", "Revisa usuarios y links registrados.")
+
+System_Boundary(shortly, "Shortly") {
+    Container(webApp, "Web App", "ASP.NET Core Razor Pages", "UI renderizada en servidor: registro, login, dashboard de links. Mantiene la cookie de sesion del usuario.")
+    Container(gateway, "API Gateway", "ASP.NET Core", "Punto de entrada unico para las APIs. Enruta hacia Link Service y User Service.")
+
+    Container(linkService, "Link Service", "ASP.NET Core (Minimal API)", "CRUD de links y resolucion GET /{shortUrl} con logica de cache HTTP (ETag/redirects condicionales).")
+    ContainerDb(linksDb, "Links DB", "SQLite/Postgres", "Tabla links: Url, ShortUrl, Clicks, UserId, CreatedAt. Propiedad exclusiva de Link Service.")
+
+    Container(userService, "User Service", "ASP.NET Core (Minimal API)", "Registro y login de usuarios (hash BCrypt), consulta de usuarios.")
+    ContainerDb(usersDb, "Users DB", "SQLite/Postgres", "Tabla users: Email, Password hash. Propiedad exclusiva de User Service.")
+    ContainerDb(ticketCache, "Distributed Cache", "IDistributedCache", "Tickets de autenticacion de la cookie de sesion, expiracion deslizante de 20 min.")
+}
+
+Rel(endUser, webApp, "Registro, login, gestion de links", "HTTPS")
+Rel(endUser, gateway, "Sigue un link corto", "HTTPS")
+Rel(admin, webApp, "Revisa usuarios y links", "HTTPS")
+
+Rel(webApp, gateway, "Invoca APIs", "HTTPS/REST")
+Rel(gateway, linkService, "Enruta CRUD de links y GET /{shortUrl}", "HTTP/REST")
+Rel(gateway, userService, "Enruta registro/login/consulta de usuarios", "HTTP/REST")
+
+Rel(linkService, linksDb, "Lee/escribe", "EF Core / SQL")
+Rel(userService, usersDb, "Lee/escribe", "EF Core / SQL")
+Rel(userService, ticketCache, "Guarda/renueva ticket tras login exitoso", "IDistributedCache API")
+Rel(webApp, ticketCache, "Valida cookie de sesion en cada request", "IDistributedCache API")
+
+SHOW_LEGEND()
+
+@enduml
