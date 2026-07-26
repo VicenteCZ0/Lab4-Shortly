@@ -1,0 +1,23 @@
+@startuml level3-component-userservice
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Diagrama de Componentes — User Service
+
+Container(gateway, "API Gateway", "ASP.NET Core", "Enruta peticiones hacia User Service.")
+ContainerDb(usersDb, "Users DB", "SQLite/Postgres", "Guarda los usuarios y su contrasena encriptada.")
+
+Container_Boundary(userServiceBoundary, "User Service") {
+    Component(endpoints, "User Endpoints", "Minimal API", "Recibe las peticiones HTTP: registro y login.")
+    Component(userService, "UserService", "Logica de negocio", "Registra usuarios nuevos, verifica contrasena al hacer login.")
+    Component(userRepository, "UserRepository", "Repositorio (EF Core)", "Guarda y consulta los usuarios en la base de datos.")
+}
+
+Rel(gateway, endpoints, "HTTP")
+Rel(endpoints, userService, "Pide registrar/loguear un usuario")
+Rel(userService, userRepository, "Lee/escribe usuarios")
+Rel(userRepository, usersDb, "SQL")
+
+SHOW_LEGEND()
+
+@enduml

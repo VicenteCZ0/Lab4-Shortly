@@ -1,0 +1,23 @@
+@startuml level3-component-linkservice
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Diagrama de Componentes — Link Service
+
+Container(gateway, "API Gateway", "ASP.NET Core", "Enruta peticiones hacia Link Service.")
+ContainerDb(linksDb, "Links DB", "SQLite/Postgres", "Guarda los links y su cantidad de clicks.")
+
+Container_Boundary(linkServiceBoundary, "Link Service") {
+    Component(endpoints, "Link Endpoints", "Minimal API", "Recibe las peticiones HTTP: crear link, listar links, y redirigir GET /{shortUrl}.")
+    Component(linkService, "LinkService", "Logica de negocio", "Crea links (genera codigo corto unico), cuenta los clicks, busca links.")
+    Component(linkRepository, "LinkRepository", "Repositorio (EF Core)", "Guarda y consulta los links en la base de datos.")
+}
+
+Rel(gateway, endpoints, "HTTP")
+Rel(endpoints, linkService, "Pide crear/buscar/redirigir un link")
+Rel(linkService, linkRepository, "Lee/escribe links")
+Rel(linkRepository, linksDb, "SQL")
+
+SHOW_LEGEND()
+
+@enduml
